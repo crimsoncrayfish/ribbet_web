@@ -24,4 +24,4 @@ Goals:
     - Add a reward to a goal
     - goal of goals? i.e. 5 runs per week at least 3 weeks per month at least 9 months per year
 - Analytics
-- Animations (ribbet)
+- Animations (ribbit)
