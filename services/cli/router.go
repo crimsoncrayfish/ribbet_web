@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -15,14 +16,16 @@ type CliRouter struct {
 	activityStore activity.ActivityFileStore
 	writer        *tabwriter.Writer
 	logger        *log.Logger
+	inputReader   *bufio.Reader
 }
 
-func InitialiseRouter(activityStore activity.ActivityFileStore, l *log.Logger) CliRouter {
+func InitialiseRouter(activityStore activity.ActivityFileStore, l *log.Logger, reader *bufio.Reader) CliRouter {
 	tw := twx.New(os.Stdout)
 	return CliRouter{
 		activityStore: activityStore,
 		writer:        tw,
 		logger:        l,
+		inputReader:   reader,
 	}
 }
 
@@ -56,7 +59,16 @@ func (r CliRouter) HandleInstruction(instruction string) error {
 	case "d":
 		r.logger.Println("INFO: Delete command requires 1 argument...")
 	case "c":
-		r.logger.Println("INFO: Create command requires 4 arguments...")
+		r.logger.Println("INFO: No arguments found for create command. Requesting activity details...")
+
+		user, description, activityType, date, err := r.getActivityArguments()
+		if err != nil {
+			r.logger.Println("WARNING: Failed to read input arguments. Please try again...")
+			return nil
+		}
+		if err := r.activityStore.Create(user, description, activityType, date); err != nil {
+			return err
+		}
 	case "q":
 		return activity.ErrCloseApplication
 	case "h":
@@ -74,7 +86,6 @@ func (r CliRouter) HandleInstructionWithArgs(instruction string, args string) er
 	case "l":
 		r.logger.Println("INFO: List command takes no arguments...")
 	case "d":
-		r.logger.Printf("Deleting activity with id %s", args)
 		if err := r.activityStore.Delete(args); err != nil {
 			if activity.IsNotFoundError(err) {
 				r.logger.Printf("WARN: Could not find activity with id %s to delete...", args)
@@ -86,28 +97,18 @@ func (r CliRouter) HandleInstructionWithArgs(instruction string, args string) er
 		r.logger.Println("Creating new activity")
 		arguments := strings.Split(args, ",")
 		if len(arguments) != 4 {
-			r.logger.Println("WARN: Create command requires exactly 4 arguments...")
+			r.logger.Println("WARN: Create command requires exactly 4 arguments. Please try again...")
 		} else {
 			user := arguments[0]
 			description := arguments[1]
-			activityType, err := activity.ToType(arguments[2])
+			activityType, err := stringToActivityType(arguments[2])
 			if err != nil {
-				if activity.IsActivityTypeNotFoundError(err) {
-					r.logger.Printf("WARN: Ensure that activity type format is correct. Expect one of %v", activity.ListTypeOptions())
-					return nil
-				} else {
-					return err
-				}
+				return err
 			}
-			layout := "2006-01-02 15:04"
-			str := arguments[3]
-			date, err := time.Parse(layout, str)
+			date, err := stringToDate(arguments[3])
 			if err != nil {
-				r.logger.Printf("WARN: Ensure that date format is correct. Expected format %s", layout)
-				r.logger.Printf("ERROR: %s", err)
-				return nil
+				return err
 			}
-
 			if err := r.activityStore.Create(user, description, activityType, date); err != nil {
 				return err
 			}
@@ -125,6 +126,48 @@ func (r CliRouter) HandleInstructionWithArgs(instruction string, args string) er
 	return nil
 }
 
+func (r CliRouter) getActivityArguments() (string, string, activity.Type, time.Time, error) {
+	name, err := r.getArgumentFromCLI("username")
+	if err != nil {
+		return "", "", activity.None, time.Now(), err
+	}
+	description, err := r.getArgumentFromCLI("description")
+	if err != nil {
+		return "", "", activity.None, time.Now(), err
+	}
+
+	activityTypeString, err := r.getArgumentFromCLI("activity type")
+	if err != nil {
+		return "", "", activity.None, time.Now(), err
+	}
+	activityType, err := stringToActivityType(activityTypeString)
+	if err != nil {
+		return "", "", activity.None, time.Now(), err
+	}
+
+	activityTimeString, err := r.getArgumentFromCLI("completed date")
+	if err != nil {
+		return "", "", activity.None, time.Now(), err
+	}
+	activityTime, err := stringToDate(activityTimeString)
+	if err != nil {
+		return "", "", activity.None, time.Now(), err
+	}
+
+	return name, description, activityType, activityTime, nil
+}
+
+func (r CliRouter) getArgumentFromCLI(argName string) (string, error) {
+	fmt.Printf("Please enter %s:", argName)
+	line, err := r.inputReader.ReadString('\n')
+	line = strings.TrimSuffix(line, "\n")
+	line = strings.TrimSuffix(line, "\r")
+	if err != nil {
+		return "", err
+	}
+	return line, nil
+}
+
 func (r CliRouter) displayActivities(list []activity.Activity) {
 	//use tabwriter to format the output
 	fmt.Fprintf(r.writer, "%s\t%s\t%s\t%s\t%s\n", "Id", "Username", "Description", "Type", "Date completed")
@@ -134,6 +177,34 @@ func (r CliRouter) displayActivities(list []activity.Activity) {
 
 	r.writer.Flush()
 	fmt.Println()
+}
+
+func stringToActivityType(input string) (activity.Type, error) {
+	activityType, err := activity.ToType(input)
+	if err != nil {
+		if activity.IsActivityTypeNotFoundError(err) {
+			fmt.Printf("WARNING: Ensure that activity type format is correct. Expect one of %v\n", activity.ListTypeOptions())
+		}
+		return activity.None, err
+	}
+	return activityType, nil
+}
+
+func stringToDate(input string) (time.Time, error) {
+	layout := "2006-01-02 15:04"
+	date := time.Now()
+	date, err := time.Parse(layout, input)
+	if err != nil {
+		layout2 := "2006-01-02"
+		date, err2 := time.Parse(layout2, input)
+		if err2 != nil {
+			fmt.Printf("WARNING: Ensure that date format is correct. Expected format %s or %s\n", layout, layout2)
+			fmt.Printf("ERROR: %s", err)
+			return time.Now(), err
+		}
+		return date, nil
+	}
+	return date, nil
 }
 
 const routerControls string = `Ribbit Habbit Tracker:

@@ -28,31 +28,34 @@ func main() {
 	}
 }
 
-func run(l *log.Logger) error {
+func run(logger *log.Logger) error {
 	//create filestore file
-	databaseFile, err := filestore.InitDatabaseFile(l, "FILE_STORE_LOCATION")
+	databaseFile, err := filestore.InitDatabaseFile(logger, "FILE_STORE_LOCATION")
 	if err != nil {
 		return err
 	}
 	defer func() {
-		l.Println("Start closing database file...")
+		logger.Println("Start closing database file...")
 		if closeErr := databaseFile.Close(); closeErr != nil {
-			l.Printf("ERROR: closing file: %s", err)
+			logger.Printf("ERROR: closing file: %s", err)
 		} else {
-			l.Println("Database file close successfull...")
+			logger.Println("Database file close successfull...")
 		}
 	}()
 
-	//initialise db store and input reader
-	l.Println("Initialising...")
-	store := activity.NewActivityFileStore(databaseFile, l)
-	router := InitialiseRouter(store, l)
+	//initialise db store
+	logger.Println("Initialising...")
+	store := activity.NewActivityFileStore(databaseFile, logger)
+
+	//initialise input reader
+	logger.Println("Creating input reader...")
+	reader := bufio.NewReader(os.Stdin)
 
 	//listen for inputs
-	l.Println("Creating input reader...")
-	reader := bufio.NewReader(os.Stdin)
-	l.Println("--------------Initialisation complete-------------")
-	l.Print(routerControls)
+	logger.Println("Creating router...")
+	router := InitialiseRouter(store, logger, reader)
+	logger.Println("--------------Initialisation complete-------------")
+	logger.Print(routerControls)
 
 	for {
 		line, err := reader.ReadString('\n')
@@ -63,7 +66,7 @@ func run(l *log.Logger) error {
 		if err = router.HandleInput(line); err != nil {
 			return err
 		}
-		l.Println()
-		l.Println("---------------------------")
+		logger.Println()
+		logger.Println("---------------------------")
 	}
 }
