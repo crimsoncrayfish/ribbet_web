@@ -160,11 +160,11 @@ func (r CliRouter) getActivityArguments() (string, string, activity.Type, time.T
 func (r CliRouter) getArgumentFromCLI(argName string) (string, error) {
 	fmt.Printf("Please enter %s:", argName)
 	line, err := r.inputReader.ReadString('\n')
-	line = strings.TrimSuffix(line, "\n")
-	line = strings.TrimSuffix(line, "\r")
 	if err != nil {
 		return "", err
 	}
+	line = strings.TrimSuffix(line, "\n")
+	line = strings.TrimSuffix(line, "\r")
 	return line, nil
 }
 

@@ -1,8 +1,0 @@
-2023/04/15 19:29:07 Ribbit CLI: File Store location is 'tmp.store.json
-2023/04/15 19:29:07 Ribbit CLI: Opening File Store
-2023/04/15 19:29:07 Ribbit CLI: Bootstrapping new File Store
-2023/04/15 19:29:07 Ribbit CLI: initialising...
-2023/04/15 19:29:07 Ribbit CLI: create new input reader, reading from standard input...
-2023/04/15 19:29:28 Ribbit CLI: start closing database file
-2023/04/15 19:29:28 Ribbit CLI: store file close success
-2023/04/15 19:29:28 Ribbit CLI: ERROR: An unexpected Error occurred 'EOF
