@@ -64,6 +64,7 @@ func (r CliRouter) HandleInstruction(instruction string) error {
 		user, description, activityType, date, err := r.getActivityArguments()
 		if err != nil {
 			r.logger.Println("WARNING: Failed to read input arguments. Please try again...")
+			r.logger.Printf("ERROR: %s", err) //swallowing error here
 			return nil
 		}
 		if err := r.activityStore.Create(user, description, activityType, date); err != nil {
@@ -101,7 +102,7 @@ func (r CliRouter) HandleInstructionWithArgs(instruction string, args string) er
 		} else {
 			user := arguments[0]
 			description := arguments[1]
-			activityType, err := stringToActivityType(arguments[2])
+			activityType, err := activity.ToType(arguments[2])
 			if err != nil {
 				return err
 			}
@@ -140,8 +141,11 @@ func (r CliRouter) getActivityArguments() (string, string, activity.Type, time.T
 	if err != nil {
 		return "", "", activity.None, time.Now(), err
 	}
-	activityType, err := stringToActivityType(activityTypeString)
+	activityType, err := activity.ToType(activityTypeString)
 	if err != nil {
+		if activity.IsActivityTypeNotFoundError(err) {
+			fmt.Printf("WARNING: Ensure that activity type format is correct. Expect one of %v\n", activity.ListTypeOptions())
+		}
 		return "", "", activity.None, time.Now(), err
 	}
 
@@ -177,17 +181,6 @@ func (r CliRouter) displayActivities(list []activity.Activity) {
 
 	r.writer.Flush()
 	fmt.Println()
-}
-
-func stringToActivityType(input string) (activity.Type, error) {
-	activityType, err := activity.ToType(input)
-	if err != nil {
-		if activity.IsActivityTypeNotFoundError(err) {
-			fmt.Printf("WARNING: Ensure that activity type format is correct. Expect one of %v\n", activity.ListTypeOptions())
-		}
-		return activity.None, err
-	}
-	return activityType, nil
 }
 
 func stringToDate(input string) (time.Time, error) {

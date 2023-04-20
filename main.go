@@ -43,7 +43,7 @@ func run() error {
 	}
 }
 
-func printMap(myMap map[string]string) {
+func printMap(myMap map[string]any) {
 	for k, v := range myMap {
 		fmt.Printf("%s: %s\n", k, v)
 	}
