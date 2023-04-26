@@ -18,7 +18,6 @@ func main() {
 		l.Printf("Failed with error %s", err)
 		os.Exit(1)
 	}
-
 }
 
 func run(l *log.Logger) error {
