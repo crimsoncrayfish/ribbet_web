@@ -1,15 +1,11 @@
 package main
 
 import (
-	"log"
-	"os"
+	logr "ribbet_web/common/log_r"
 )
 
-const logFlags = log.Ldate | log.Ltime | log.LUTC | log.Lmsgprefix
-
 func main() {
-
-	l := log.New(os.Stdout, "My Fancy Logger: ", logFlags)
+	l := logr.New("My Fancy Logger")
 
 	l.Println("Hello World!!!")
 }
