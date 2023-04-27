@@ -3,7 +3,7 @@ package activity
 import "time"
 
 type Activity struct {
-	id           string
-	description  string
-	completed_at time.Time
+	Id           string    `json:"id"`
+	Description  string    `json:"description"`
+	Completed_at time.Time `json:"completion_time"`
 }
