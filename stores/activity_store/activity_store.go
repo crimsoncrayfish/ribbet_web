@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const STORE_NAME = "activities"
+
 type ActivityStore struct {
 	l      *log.Logger
 	dbFile *os.File
