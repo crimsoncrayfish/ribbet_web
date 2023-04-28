@@ -13,3 +13,9 @@ create file .prettierignore
 # prettier for GO templates
 
 `npm install --save-dev prettier prettier-plugin-go-template`
+
+# Tailwind CSS
+`npm install -D tailwindcss`
+`npx tailwindcss init`
+Install "Tailwind CSS IntelliSense" vscode plugin
+`npm install -D prettier prettier-plugin-tailwindcss`
